@@ -6,7 +6,6 @@
 
 #define BUFLEN 128
 #define MAXADDRLEN 256
-#define QLEN 10
 
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX 256
@@ -102,8 +101,8 @@ int main(int argc,char * /*argv*/ []){
     //遍历地址列表创建服务
     for(aip=ailist;aip!=NULL;aip=aip->ai_next){
         //初始化套接字
-        if((sockfd=initserver(SOCK_STREAM,aip->ai_addr,
-            aip->ai_addrlen,QLEN))>=0){
+        if((sockfd=initserver(SOCK_DGRAM,aip->ai_addr,
+            aip->ai_addrlen,0))>=0){
             //等待接受套接字
             serve(sockfd);
             //退出程序
