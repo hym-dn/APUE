@@ -22,6 +22,9 @@ int main(void){
     term.c_cc[VINTR]=vdisable;//禁用中断键
     term.c_cc[VEOF]=2;//将文件结束符设置为Control-B
     //重新设置终端信息结构
+    //TCSANOW：不等数据传输完毕就立即改变属性。
+    //TCSADRAIN：等待所有数据传输结束才改变属性。
+    //TCSAFLUSH：等待所有数据传输结束,清空输入输出缓冲区才改变属性。
     if(tcsetattr(STDIN_FILENO,TCSAFLUSH,&term)<0){
         err_sys("tcsetattr error");
     }
