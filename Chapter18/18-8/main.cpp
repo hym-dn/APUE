@@ -29,7 +29,7 @@ char *getpass(const char *prompt){
     tcgetattr(fileno(fp),&ts);
     //保存终端信息
     ots=ts;
-    //
+    //不进行回显
     ts.c_lflag&=~(ECHO|ECHOE|ECHOK|ECHONL);
     //设置终端信息
     tcsetattr(fileno(fp),TCSAFLUSH,&ts);
