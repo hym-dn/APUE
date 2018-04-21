@@ -22,7 +22,7 @@ int main(int argc,char *argv[]){
         // 打印主、次设备号
         printf("dev=%d/%d",major(buf.st_dev),minor(buf.st_dev));
         // 字符设备、块设备
-        if(S_ISCHR(buf.st_mode)||S_ISBLK(buf.st_modeex)){
+        if(S_ISCHR(buf.st_mode)||S_ISBLK(buf.st_mode)){
             printf(" (%s) rdev=%d/%d",(S_ISCHR(buf.st_mode))?
                 "character":"block",major(buf.st_rdev),minor
                 (buf.st_rdev)); // 输出
