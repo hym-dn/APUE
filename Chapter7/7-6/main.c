@@ -42,3 +42,15 @@ int main(void){
     // 退出
     exit(0);
 }
+
+static void f1(int i,int j,int k,int l){
+    printf("in f1():\n");
+    printf("globval=%d,autoval=%d,regival=%d,"
+        "volaval=%d,statval=%d\n",globval,i,
+        j,k,l);
+    f2();
+}
+
+static void f2(void){
+    longjmp(jmpbuffer,1);
+}
