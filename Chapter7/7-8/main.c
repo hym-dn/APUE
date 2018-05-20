@@ -29,7 +29,7 @@ int main(void){
     doit(RLIMIT_FSIZE);
     // 一个进程可持有的文件锁的最大数
 #ifdef RLIMIT_LOCKS
-    doit(RLIMIT_LOCKS)
+    doit(RLIMIT_LOCKS);
 #endif
     // 一个进程使用mlock能够锁定在存储器中
     // 的最大字节长度
