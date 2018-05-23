@@ -28,7 +28,7 @@ int main(void){
     else if(pid==0){ /* specify pathname,specify environment */
         if(execlp("echoall","echoall","only 1 arg",
             (char *)0)<0){ // 如果execle执行成功，
-            err_sys("execlp error");          // 这段代码将不会被执行
+            err_sys("execlp error"); // 这段代码将不会被执行
         }
     }
     // 退出
