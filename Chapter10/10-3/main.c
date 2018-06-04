@@ -15,7 +15,7 @@ int main(){
         perror("fork error");
     }
     // 子进程
-    else{ /* child */
+    else if(pid==0){ /* child */
         sleep(2);
         _exit(0);
     }
