@@ -14,10 +14,10 @@ void pr_mask(const char *str){
     // 打印信息
     printf("%s",str);
     // 打印信号信息
-    if(sigismember(&siget,SIGINT)) printf("SIGINT ");
-    if(sigismember(&siget,SIGQUIT)) printf("SIGQUIT ");
-    if(sigismember(&siget,SIGUSR1)) printf("SIGUSR1 ");
-    if(sigismember(&siget,SIGALRM)) printf("SIGALRM ");
+    if(sigismember(&sigset,SIGINT)) printf("SIGINT ");
+    if(sigismember(&sigset,SIGQUIT)) printf("SIGQUIT ");
+    if(sigismember(&sigset,SIGUSR1)) printf("SIGUSR1 ");
+    if(sigismember(&sigset,SIGALRM)) printf("SIGALRM ");
     /* remaining signals can go here */
     printf("\n");
     // 恢复错误编号
