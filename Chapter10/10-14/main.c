@@ -1,5 +1,6 @@
-#include"../../apue.h"
+//#include"../../apue.h"
 #include"../10-10/pr_mask.h"
+#include"../10-12/signal.h"
 #include<setjmp.h>
 #include<time.h>
 

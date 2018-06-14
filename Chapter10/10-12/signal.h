@@ -21,7 +21,7 @@ Sigfunc *signal(int signo,Sigfunc *func){
     else{
         // 启动系统调用自动重启
 #ifdef SA_RESTART
-        act.sa_flags|=SA_RESTART
+        act.sa_flags|=SA_RESTART;
 #endif
     }
     // 捕获信号
