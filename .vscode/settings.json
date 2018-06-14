@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "pr_mask.h": "c",
+        "signal.h": "c"
+    }
+}
