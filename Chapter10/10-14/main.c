@@ -1,14 +1,16 @@
-#include"../../apue.h"
+//#include"../../apue.h"
 #include"../10-10/pr_mask.h"
+#include"../10-12/signal.h"
 #include<setjmp.h>
 #include<time.h>
 
-static void sig_usr1(int),sig_alrm(int);
+static void sig_usr1(int);
+static void sig_alrm(int);
 static sigjmp_buf jmpbuf;
 static volatile sig_atomic_t canjump;
 
 int main(void){
-    // 安装信号处理程序
+    // 安装信号捕获函数
     if(signal(SIGUSR1,sig_usr1)==SIG_ERR){
         err_sys("signal(SIGUSR1) error");
     }
@@ -24,41 +26,42 @@ int main(void){
         // 退出
         exit(0);
     }
-    // 跳转标志设置完毕
+    // 启用跳转标志
     canjump=1; /* now sigsetjmp() is OK */
-    // 无限循环
+    // 等待信号触发
     for(;;){
-        pause(); // 等待信号产生
+        pause();
     }
 }
 
-// SIGUSR1 信号捕捉函数
+// SIGUSR1信号捕获函数
 static void sig_usr1(int signo){
     time_t starttime;
     // 如果跳转标志尚未设置
-    if(0==canjump){
-        return; /* unexpected signal, ignore */
+    if(canjump==0){
+        return; /* unexpected signal,ignore */
     }
-    // 打印信号屏蔽字
+    // 打印屏蔽字
     pr_mask("starting sig_usr1: ");
     // 安装闹钟
     alarm(3); /* SIGALRM in 3 seconds */
-    // 记录起始时间
+    // 记录启动时间
     starttime=time(NULL);
     // 等待5秒钟
-    for(;;){ /* busy wait for 5 seconds */
+    for(;;){
         if(time(NULL)>starttime+5){
             break;
         }
     }
     // 打印屏蔽字
     pr_mask("finishing sig_usr1: ");
-    // 清空标志
+    // 清除跳转标志
     canjump=0;
     // 跳转
-    siglongjmp(jmpbuf,1); /* jump back to main. don't return */
+    siglongjmp(jmpbuf,1); /* jump back to main,don't return */
 }
 
+// SIGALRM信号捕获函数
 static void sig_alrm(int signo){
     pr_mask("in sig_alrm: ");
 }
