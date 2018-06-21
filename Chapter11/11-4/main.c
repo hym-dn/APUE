@@ -15,8 +15,7 @@ void *thr_fn1(void *arg){
     pthread_cleanup_push(cleanup,"thread 1 second handler");
     // 如果参数非空
     if(arg){
-        //return((void*)1);
-        pthread_exit((void*)1);
+        return((void*)1);
     }
     // 卸载线程清理函数
     pthread_cleanup_pop(0);
@@ -34,7 +33,6 @@ void *thr_fn2(void *arg){
     pthread_cleanup_push(cleanup,"thread 2 second handler");
     // 如果参数非空
     if(arg){
-        //return((void*)2);
         pthread_exit((void*)2);
     }
     // 卸载线程清理函数
