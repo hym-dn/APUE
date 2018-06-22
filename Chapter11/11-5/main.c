@@ -5,7 +5,7 @@
 struct foo{
     int f_count; // 引用计数
     pthread_mutex_t f_lock; // 互斥锁
-    /* ... more stuff here ...*/
+    /* ... more stuff here ... */
 };
 
 // 分配一个资源结构
