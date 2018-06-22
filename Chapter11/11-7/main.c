@@ -85,27 +85,9 @@ void foo_rele(struct foo *fp){ /* release a reference to the object */
     struct foo *tfp;
     int idx;
     // 上锁
-    pthread_mutex_lock(&fp->f_lock);
+    pthread_mutex_lock(&hashlock);
     // 引用计数自减
-    if(--fp->f_count==1){ /* last reference */ // 计数为0
-        // 解锁
-        pthread_mutex_unlock(&fp->f_lock);
-        // 上锁
-        pthread_mutex_lock(&hashlock);
-        // 上锁
-        pthread_mutex_lock(&fp->f_lock);
-        /* need to recheck the condition */
-        if(fp->f_count!=1){
-            // 计数递减
-            fp->f_count--;
-            // 解锁
-            pthread_mutex_unlock(&fp->f_lock);
-            // 解锁
-            pthread_mutex_unlock(&hashlock);
-            // 返回
-            return;
-        }
-        /* remove from list */
+    if(--fp->f_count==0){ /* last reference */ // 计数为0
         // 删除Hash列表
         idx=HASH(fp);
         tfp=fh[idx];
@@ -119,8 +101,6 @@ void foo_rele(struct foo *fp){ /* release a reference to the object */
         }
         // 解锁
         pthread_mutex_unlock(&hashlock);
-        // 解锁
-        pthread_mutex_unlock(&fp->f_lock);
         // 销毁
         pthread_mutex_destroy(&fp->f_lock);
         // 释放
@@ -128,9 +108,7 @@ void foo_rele(struct foo *fp){ /* release a reference to the object */
     }
     // 计数非0
     else{
-        // 计数递减
-        fp->f_count--;
         // 解锁
-        pthread_mutex_unlock(&fp->f_lock);
+        pthread_mutex_unlock(&hashlock);
     }
 }
