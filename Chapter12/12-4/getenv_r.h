@@ -24,7 +24,7 @@ static void thread_init(void){
 // 线程安全获取环境变量版本
 int getenv_r(const char *name,char *buf,int buflen){
     int i,len,olen;
-    //
+    // 确保多线程值调用一次thread_init
     pthread_once(&init_done,thread_init);
     // 获取名字长度
     len=strlen(name);
