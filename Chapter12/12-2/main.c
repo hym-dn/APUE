@@ -1,4 +1,5 @@
 #include"../../apue.h"
+#include"../12-1/makethread.h"
 #include<pthread.h>
 #include<time.h>
 #include<sys/time.h>
@@ -35,7 +36,7 @@ void timeout(const struct timespec *when,void (*func)(void *),void *arg){
     now.tv_sec=tv.tv_sec;
     now.tv_nsec=tv.tv_usec*USECTONSEC;
     if((when->tv_sec>now.tv_sec)||(when->tv_sec==now.tv_sec
-        &&when->tv_nsec>now.tv_nsec)){
+        &&when->tv_nsec>now.tv_nsec)){ // 尚未超时，则开启超时等待
         // 分配信息结构
         tip=malloc(sizeof(struct to_info));
         // 分配成功
@@ -69,3 +70,36 @@ void timeout(const struct timespec *when,void (*func)(void *),void *arg){
 pthread_mutexattr_t attr;
 pthread_mutex_t mutex;
 
+void retry(void *arg){
+    pthread_mutex_lock(&mutex);
+    /* perform retry steps ... */
+    pthread_mutex_unlock(&mutex);
+}
+
+int main(void){
+    int err,condition,arg;
+    struct timespec when;
+    // 初始化互斥量属性
+    if((err=pthread_mutexattr_init(&attr))!=0){
+        err_exit(err,"pthread_mutexattr_init failed");
+    }
+    // 设置互斥量递归类型
+    if((err=pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_RECURSIVE))!=0){
+        err_exit(err,"can't set recursive type");
+    }
+    // 初始化互斥量
+    if((err=pthread_mutex_init(&mutex,&attr))!=0){
+        err_exit(err,"can't create recursive mutex");
+    }
+    /* ... */
+    pthread_mutex_lock(&mutex);
+    /* ... */
+    if(condition){
+        /* calculate target time "when" */
+        timeout(&when,retry,(void*)arg);
+    }
+    /* ... */
+    pthread_mutex_unlock(&mutex);
+    /* ... */
+    exit(0);
+}
