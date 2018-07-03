@@ -24,6 +24,7 @@ void *thr_fn(void *arg){
             break;
         // 退出信号
         case SIGQUIT:
+            printf("\nquit\n");
             // 上锁
             pthread_mutex_lock(&lock);
             // 标志
