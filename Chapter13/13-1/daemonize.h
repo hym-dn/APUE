@@ -82,8 +82,3 @@ void daemonize(const char *cmd){
         exit(1);
     }
 }
-
-void main(void){
-    daemonize("hello");
-    pause();
-}
