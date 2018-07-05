@@ -91,7 +91,7 @@ int main(int argc,char *argv[]){
     }
     // 设置线程屏蔽字，阻塞全部信号
     sigfillset(&mask);
-    if((err=pthread_sigmask(SIG_BLOCK,&mask,NULL)!=0){
+    if((err=pthread_sigmask(SIG_BLOCK,&mask,NULL))!=0){
         err_exit(err,"SIG_BLOCK error");
     }
     /**
