@@ -82,7 +82,31 @@ int main(int argc,char *argv[]){
     /**
      * Restore SIGHUP default and block all signals.
      */
+    // 将SIGHUP设置为默认处理，防止进程对此信号处理为忽略
     sa.sa_handler=SIG_DFL;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags=0;
+    if(sigaction(SIGHUP,&sa,NULL)<0){
+        err_quit("%s: can't restore SIGHUP default");
+    }
+    // 设置线程屏蔽字，阻塞全部信号
+    sigfillset(&mask);
+    if((err=pthread_sigmask(SIG_BLOCK,&mask,NULL)!=0){
+        err_exit(err,"SIG_BLOCK error");
+    }
+    /**
+     * Create a thread to handle SIGHUP and SIGTERM.
+     */
+    // 创建线程处理SIGHUP、SIGTERM信号
+    err=pthread_create(&tid,NULL,thr_fn,0);
+    if(err!=0){
+        err_exit(err,"can't create thread");
+    }
+    /**
+     * Proceed with the rest of the daemon
+     */
+    // 处理余下的工作
+    /* ... */
+    // 退出
+    exit(0);
 }
