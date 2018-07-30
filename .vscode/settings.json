@@ -3,6 +3,7 @@
         "pr_mask.h": "c",
         "signal.h": "c",
         "makethread.h": "c",
-        "pthread.h": "c"
+        "pthread.h": "c",
+        "lock_reg.h": "c"
     }
 }

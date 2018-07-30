@@ -16,6 +16,7 @@ int lock_reg(int fd,int cmd,int type,off_t offset,int whence,off_t len){
     return(fcntl(fd,cmd,&lock));
 }
 
+/*
 // 加读锁
 #define read_lock(fd,offset,whence,len) \
     lock_reg((fd),F_SETLK,F_RDLCK,(offset),(whence),(len))
@@ -29,3 +30,4 @@ int lock_reg(int fd,int cmd,int type,off_t offset,int whence,off_t len){
 // 解锁
 #define un_lock(fd,offset,whence,len) \
     lock_reg((fd),F_SETLK,F_UNLCK,(offset),(whence),(len))
+    */

@@ -1,5 +1,6 @@
 #include"../../apue.h"
 #include"../../Chapter10/10-17/tell.h"
+#include"../14-2/lock_reg.h"
 #include<fcntl.h>
 
 // 锁一个字节
