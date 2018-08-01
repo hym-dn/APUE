@@ -1,10 +1,11 @@
 #include"../../apue.h"
 #include<fcntl.h>
 #include<stropts.h>
-#include<sys/conf.h>
+//#include<sys/conf.h>
 
 int main(int argc,char *argv[]){
     int fd,i,nmods;
+    struct str_list list;
     // 如果参数个数非法
     if(argc!=2){
         err_quit("usage: %s <pathname>",argv[0]);
