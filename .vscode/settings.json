@@ -4,6 +4,7 @@
         "signal.h": "c",
         "makethread.h": "c",
         "pthread.h": "c",
-        "lock_reg.h": "c"
+        "lock_reg.h": "c",
+        "apue.h": "c"
     }
 }
