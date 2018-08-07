@@ -22,7 +22,7 @@ int main(int argc,char *argv[]){
         err_quit("usage: a.out <pathname>");
     }
     //分页文件
-    if((fp=fopen(argv[1],"r"))==NULL){
+    if((fp=fopen(argv[1],"r"))==0){
         err_sys("can't open %s",argv[1]);
     }
     //创建管道
@@ -38,11 +38,11 @@ int main(int argc,char *argv[]){
         //关闭'读'
         close(fd[0]);
         //读文件
-        while(fgets(line,MAXLINE,fp)!=NULL){
+        while(fgets(line,MAXLINE,fp)!=0){
             //读取长度
             n=strlen(line);
             //写管道
-            if(write(fd[1],line,n)==NULL){
+            if(write(fd[1],line,n)==0){
                 err_sys("write error to pipe");
             }
         }
@@ -74,7 +74,7 @@ int main(int argc,char *argv[]){
         }
         //分页程序
         if((pager=getenv("PAGER"))==NULL){
-            pager=DEF_PAGER;
+            pager=(char*)DEF_PAGER;
         }
         //分页程序名称
         if((argv0=strrchr(pager,'/'))!=NULL){
