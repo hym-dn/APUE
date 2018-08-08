@@ -147,7 +147,7 @@ int pclose(FILE *fp){
         return(-1);
     }
     //等待进程退出
-    while(waitpid(pid,&stat,0)<0){
+    while(waitpid(pid,&stat,0)<0){ // 被信号中断后，继续等待
         if(errno!=EINTR){
             return(-1); /* error other than EINTR from waitpid() */
         }
