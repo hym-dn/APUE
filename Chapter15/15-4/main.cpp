@@ -2,7 +2,7 @@
 #include<sys/wait.h>
 
 //分页命令
-#define PAGER "${PAGER:-more}"
+#define PAGER "${PAGER:-more}" /* environment variable, or default */
 
 int main(int argc,char *argv[]){
     //行字符
