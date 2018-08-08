@@ -9,7 +9,7 @@ int main(void){
     //1.Fork子进程
     //2.执行15-6程序
     //3.返回15-6的标准输出
-    if((fpin==popen("15-6","r"))==NULL){
+    if((fpin=popen("./myuclc","r"))==0){
         err_sys("popen error");
     }
     //显示15-6过滤程序的过滤结果
@@ -19,7 +19,7 @@ int main(void){
         //冲洗标准输出
         fflush(stdout);
         //从管道中读取内容
-        if(fgets(line,MAXLINE,fpin)==NULL){
+        if(fgets(line,MAXLINE,fpin)==0){
             break;
         }
         //输出读取内容
