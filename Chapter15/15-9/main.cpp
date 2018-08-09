@@ -60,7 +60,7 @@ int main(void){
         exit(0);
     }
     // 子进程
-    else{
+    else{ /* child */
         // 关闭写
         close(fd1[1]);
         // 关闭读
@@ -84,7 +84,7 @@ int main(void){
             close(fd2[0]);
         }
         //执行
-        if(execl("15-8","15-8",(char*)0)<0){
+        if(execl("./add2","add2",(char*)0)<0){
             err_sys("execl error");
         }
         //退出
