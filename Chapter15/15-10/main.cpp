@@ -3,6 +3,13 @@
 int main(void){
     int int1,int2;
     char line[MAXLINE];
+    // 设置行缓冲
+    if(setvbuf(stdin,NULL,_IOLBF,0)!=0){
+        err_sys("setvbuf error");
+    }
+    if(setvbuf(stdout,NULL,_IOLBF,0)!=0){
+        err_sys("setvbuf error");
+    }
     // 循环从标准输入读
     while(fgets(line,MAXLINE,stdin)!=0){ // 读取成功
         // 读取数字成功
