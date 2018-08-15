@@ -4,7 +4,7 @@
 #define ARRAY_SIZE 40000
 #define MALLOC_SIZE 100000
 #define SHM_SIZE 100000
-#define SHM_MODE 0600
+#define SHM_MODE 0600 /*IPC_EXCL|IPC_NOWAIT*/
 
 char array[ARRAY_SIZE];
 
@@ -30,6 +30,7 @@ int main(void){
     printf("malloced from %lx to %lx\n",(unsigned long)ptr,
         (unsigned long)ptr+MALLOC_SIZE);
     //创建共享内存
+    //IPC_PRIVATE 说明并不考虑进程间通讯  
     if((shmid=shmget(IPC_PRIVATE,SHM_SIZE,SHM_MODE))<0){
         err_sys("shmget error");
     }
