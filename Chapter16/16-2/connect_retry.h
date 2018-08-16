@@ -16,6 +16,9 @@ int connect_retry(int sockfd,const struct sockaddr *addr,socklen_t alen){
             return(0);
         }
         // 延时重试
+        /**
+         * Delay before trying again. 
+         */
         if(nsec<=MAXSLEEP/2){
             sleep(nsec);
         }
