@@ -112,10 +112,10 @@ void print_flags(struct addrinfo *aip){
 #if defined(AI_NUMERICSERV)
         if(aip->ai_flags&AI_NUMERICSERV){
             printf(" numserv");
-        }canon
+        }
 #endif
-        /canon回映射到IPv6格式的IPv4地址
-#if defincanon
+        // 如果没有找到IPv6地址，则返回映射到IPv6格式的IPv4地址
+#if defined(AI_V4MAPPED)
         if(aip->ai_flags&AI_V4MAPPED){
             printf(" v4mapped");
         }
