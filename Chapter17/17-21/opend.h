@@ -11,4 +11,4 @@ extern int oflag; /* open() flag: O_XXX ... */
 extern char *pathname; /* of file t open() for client */
 
 int cli_args(int,char**);
-void handle_request(char*,int,int);
+void request(char*,int,int);
