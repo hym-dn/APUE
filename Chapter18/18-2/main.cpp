@@ -9,7 +9,7 @@ int main(void){
     if(tcgetattr(STDIN_FILENO,&term)<0){ // 失败
         err_sys("tcgetattr error");
     }
-    // 打印终端字符
+    // 打印终端字符长度
     switch(term.c_cflag&CSIZE){
     case CS5:
         printf("5 bits/byte\n");
