@@ -5,12 +5,12 @@
 
 #ifndef _HAS_OPENPT
 
-//打开伪终端
+// 打开伪终端
 int posix_openpt(int oflag){
     int fdm;
-    //打开伪终端主设备
+    // 打开伪终端主设备
     fdm=open("/dev/ptmx",oflag);
-    //返回主设备文件描述符
+    // 返回主设备文件描述符
     return(fdm);
 }
 
@@ -18,17 +18,21 @@ int posix_openpt(int oflag){
 
 #ifndef _HAS_OPENPT
 
-//根据文件描述符获取从设备文件名称
+/**
+ * 获取指定主设备的从设备文件名称
+ * fdm - 输入的主设备文件描述符
+ */
 char *ptsname(int fdm){
     int sminor;
     static char pts_name[16];
-    //获取相应伪终端从设备
+    // 获取相应伪终端从设备
     if(ioctl(fdm,TIOCGPTN,&sminor)<0){
         return(NULL);
     }
-    //形成伪终端从设备名称
-    snprintf(pts_name,sizeof(pts_name),"/dev/pts/%d",sminor);
-    //返回伪终端从设备名称
+    // 形成伪终端从设备名称
+    snprintf(pts_name,sizeof(pts_name),
+        "/dev/pts/%d",sminor);
+    // 返回伪终端从设备名称
     return(pts_name);
 }
 
@@ -36,7 +40,10 @@ char *ptsname(int fdm){
 
 #ifndef _HAS_OPENPT
 
-//设备伪终端从设备访问权限
+/**
+ * 设置伪终端从设备访问权限
+ * fdm - 输入的主设备文件描述符
+ */
 int grantpt(int fdm){
     char *pts_name;
     pts_name=ptsname(fdm);
@@ -47,7 +54,9 @@ int grantpt(int fdm){
 
 #ifndef _HAS_OPENPT
 
-//解锁伪终端从设备，使其可用
+/**
+ * 解锁伪终端从设备，允许其被访问
+ */
 int unlockpt(int fdm){
     int lock=0;
     return(ioctl(fdm,TIOCSPTLCK,&lock));
@@ -55,7 +64,11 @@ int unlockpt(int fdm){
 
 #endif
 
-//打开伪终端主设备
+/**
+ * 打开伪终端主设备
+ * pts_name - 伪终端从设备名称（返回的）
+ * pts_namesz - 伪终端从设备名称尺寸
+ */
 int ptym_open(char *pts_name,int pts_namesz){
     char *ptr;
     int fdm;
@@ -64,25 +77,25 @@ int ptym_open(char *pts_name,int pts_namesz){
      * the caller can print an error message.Null terminate to 
      * handle case where string length > pts_namesz.
      */
-    //拷贝伪终端主设备名称
+    // 拷贝伪终端主设备名称
     strncpy(pts_name,"/dev/ptmx",pts_namesz);
-    //结束字符
+    // 结束字符
     pts_name[pts_namesz-1]='\0'; // 防止字符串溢出
-    //获取第一个未被使用的PTY主设备
+    // 获取第一个未被使用的PTY主设备
     if((fdm=posix_openpt(O_RDWR))<0){
         return(-1);
     }
-    //设置从设备的访问权
+    // 设置从设备的访问权
     if(grantpt(fdm)<0){ // grant access to slave
         close(fdm);
         return(-2);
     }
-    //清除从设备锁
+    // 清除从设备锁
     if(unlockpt(fdm)<0){ // clear slave's lock flag
         close(fdm);
         return(-3);
     }
-    //获取从设备名称
+    // 获取从设备名称
     if((ptr=ptsname(fdm))==NULL){// get slave's name
         close(fdm);
         return(-4);
@@ -91,14 +104,14 @@ int ptym_open(char *pts_name,int pts_namesz){
      * Return name of slave. Null terminate to handle
      * case where strlen(ptr) > pts_namesz.
      */
-    //返回从设备名称
+    // 返回从设备名称
     strncpy(pts_name,ptr,pts_namesz);
     pts_name[pts_namesz-1]='\0'; // 防止字符串溢出
-    //返回主设备文件描述符
+    // 返回主设备文件描述符
     return(fdm);
 }
 
-//打开指定伪终端从设备
+// 打开指定伪终端从设备
 int ptys_open(char *pts_name){
     int fds;
     if((fds=open(pts_name,O_RDWR))<0){
