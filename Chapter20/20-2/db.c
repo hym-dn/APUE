@@ -395,6 +395,7 @@ static off_t _db_readptr(DB *db,off_t offset){
  * and replace the separators with null typets. If all is OK we
  * set db->datoff and db->datlen to the offset and length of the
  * corresponding data record in the data file.
+ * 从索引文件中的指定偏移量处读取索引记录。
  */
 static off_t _db_readidx(DB *db,off_t offset){
     ssize_t i;
