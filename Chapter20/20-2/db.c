@@ -737,3 +737,116 @@ static void _db_writeptr(DB *db,off_t offset,off_t ptrval){
         err_dump("_db_writeptr: write error of ptr field");
     }
 }
+
+/**
+ * Store a record in the database. Return 0 if OK, 1 if record
+ * exists and DB_INSERT specified, -1 on error.
+ * 向数据库中存储一条记录
+ */
+int db_store(DBHANDLE h,const char *key,const char *data,int flag){
+    DB *db=h;
+    int rc,keylen,datlen;
+    off_t ptrval;
+    // 输入的存储标志非法
+    if(flag!=DB_INSERT&&flag!=DB_REPLACE&&flag!=DB_STORE){
+        errno=EINVAL;
+        return(-1);
+    }
+    // 键长
+    keylen=strlen(key);
+    // 数据长
+    datlen=strlen(data)+1; /* +1 for newline at end */
+    // 数据长度非法
+    if(datlen<DATLEN_MIN||datlen>DATLEN_MAX){
+        err_dump("db_store: invalid data length");
+    }
+    /**
+     * _db_find_and_lock calculates which hash table this new record
+     * goes into (db->chainoff), regardless of whether it already 
+     * exists or not. The following calls to _db_writeptr change the
+     * hash table entry for this chain to point to the new record.
+     * The new record is added to the front of the hash chain.
+     */
+    // 记录没有发现
+    if(_db_find_and_lock(db,key,1)<0){ /* record not found */
+        // 期望更新
+        if(flag==DB_REPLACE){
+            rc=-1;
+            db->cnt_storerr++;
+            errno=ENOENT; /* error,record does not exist */
+            goto doreturn; // 返回
+        }
+        /**
+         * _db_find_and_lock locked the hash chain for us; read
+         * the chain ptr to the first index record on hash chain.
+         * 读散列链上第一项的偏移量
+         */
+        ptrval=_db_readptr(db,db->chainoff);
+        if(_db_findfree(db,keylen,datlen)<0){
+            /**
+             * Can't find an empty record big enough. Append the
+             * new record to the ends of the index and data files.
+             */
+            _db_writedat(db,data,0,SEEK_END);
+            _db_writeidx(db,key,0,SEEK_END,ptrval);
+            /**
+             * db->idxoff was set by _db_writeidx. The new record goes
+             * to the front of the hash chain.
+             */
+            _db_writeptr(db,db->chainoff,db->idxoff);
+            db->cnt_stor1++;
+        }else{
+            /**
+             * Reuse an empty record. _db_findfree removed it from the 
+             * free list and set both db->datoff and db->idxoff. Reused
+             * record goes to the front of the hash chain.
+             */
+            _db_writedat(db,data,db->datoff,SEEK_SET);
+            _db_writeidx(db,key,db->idxoff,SEEK_SET,ptrval);
+            _db_writeptr(db,db->chainoff,db->idxoff);
+            db->cnt_stor2++;
+        }
+    }else{ /* record found */
+        // 如果当前是插入
+        if(flag==DB_INSERT){ // 报错
+            rc=1; /* error,record already in db */
+            db->cnt_storerr++;
+            goto doreturn;
+        }
+        /**
+         * We are replacing an existing record. We know the new
+         * key equals the existing key, but we need to check if
+         * the data records are the same size.
+         */
+        if(datlen!=db->datlen){
+            _db_dodelete(db); /* delete the existing record */
+            /**
+             * Reread the chain ptr in the hash table
+             * (it may change with the deletion ).
+             */
+            ptrval=_db_readptr(db,db->chainoff);
+            /**
+             * Append new index and data records to end of files.
+             */
+            _db_writedat(db,data,0,SEEK_END);
+            _db_writeidx(db,key,0,SEEK_END,ptrval);
+            /**
+             * New record goes to the front of the hash chain.
+             */
+            _db_writeptr(db,db->chainoff,db->idxoff);
+            db->cnt_stor3++;
+        }else{
+            /**
+             * Same size data, just replace data record.
+             */
+            _db_writedat(db,data,db->datoff,SEEK_SET);
+            db->cnt_stor4++;
+        }
+    }
+    rc=0; /* OK */
+doreturn: /* unlock hash chain locked by _db_find_and_lock */
+    if(un_lock(db->idxfd,db->chainoff,SEEK_SET,1)<0){
+        err_dump("db_store: un_lock error");
+    }
+    return(rc);
+}
