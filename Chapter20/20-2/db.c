@@ -39,13 +39,13 @@ typedef struct{
     char *name; /* name db was opened under */ // 数据名称
     off_t idxoff; /* offset in index file of index record */ // 索引处于索引文件中的偏移量
                   /* key is at (idxoff + PTR_SZ + IDXLEN_SZ) */
-    size_t idxlen; /* length of index record */ // 一条索引长度
+    size_t idxlen; /* length of index record */ // 索引长度
                    /* excludes IDXLEN_SZ bytes at front of record */
                    /* includes newline at end of index record */
     off_t datoff; /* offset in data file of data record */ // 数据记录处于数据文件中的偏移量
     size_t datlen; /* length of data record */ // 数据记录的长度
                    /* includes newline at end */
-    off_t ptrval; /* contents of chain ptr in index record */ // 索引文件中链表指针内容 ??
+    off_t ptrval; /* contents of chain ptr in index record */ // 当前记录中链表指针内容
     off_t ptroff; /* chain ptr offset pointing to this idx record */ // 当前索引偏移
     off_t chainoff; /* offset of hash chain for this index record */ // 哈希链表偏移量
     off_t hashoff; /* offset in index file of hash table */ // 哈希表偏移量
@@ -402,5 +402,86 @@ static off_t _db_readidx(DB *db,off_t offset){
     char *ptr1,*ptr2;
     char assciiptr[PTR_SZ+1],asciilen[IDXLEN_SZ+1];
     struct iovec iov[2];
-
+    /**
+     * Position index file and record the offset. db_nextrec calls 
+     * us with==0,meaning read from current offset.We still need to 
+     * call lseek to record the current offset.
+     * 使索引文件指针移动到指定偏移位置处
+     */
+    if((db->idxoff=lseek(db->idxfd,offset,offset==0?SEEK_CUR:SEEK_SET))==-1){
+        err_dump("_db_readidx: lseek_error");
+    }
+    /**
+     * Read the ascii chain ptr and the ascii length at the front of 
+     * the index record. This tells us the remaining size of the index 
+     * record.
+     * 读取链表指针，以及索引长度
+     */
+    iov[0].iov_base=assciiptr;
+    iov[0].iov_len=PTR_SZ;
+    iov[1].iov_base=asciilen;
+    iov[1].iov_len=IDXLEN_SZ;
+    if((i=readv(db->idxfd,&iov[0],2))!=PTR_SZ+IDXLEN_SZ){ // 读取失败
+        // 读到结束符
+        if(i==0&&offset==0){
+            return(-1); /* EOF for db_nextrec */
+        }
+        // 输出错信息
+        err_dump("_db_readidx: readv error of index record");
+    }
+    /**
+     * This is our return value; always >= 0
+     */
+    // 追加结束符
+    assciiptr[PTR_SZ]=0; /* null terminate */
+    // 记录中索引指针内容
+    db->ptrval=atol(assciiptr); /* offset of next key in chain */
+    // 追加结束符
+    asciilen[IDXLEN_SZ]=0; /* null terminate */
+    // 记录索引长度，并且检测合法性
+    if((db->idxlen=atoi(asciilen))<IDXLEN_MIN||db->idxlen>IDXLEN_MAX){
+        err_dump("_db_readidx: invalid length");
+    }
+    /**
+     * Now read the actual index record. We read it into the key
+     * buffer that we malloced when we opened the database.
+     * 读取索引不定长部分
+     */
+    // 读取索引不定长部分
+    if((i=read(db->idxfd,db->idxbuf,db->idxlen))!=db->idxlen){
+        err_dump("_db_readidx: read error of index record");
+    }
+    // 检验是否以换行符结尾
+    if(db->idxbuf[db->idxlen-1]!=NEWLINE){ /* sanity check */
+        err_dump("_db_readidx: missing newline");
+    }
+    // 替换换行符
+    db->idxbuf[db->idxlen-1]=0; /* replace newline with null */
+    /**
+     * Find the separators in the index record.
+     * 根据分隔符，划分索引数据，键：数据偏移：数据长度
+     */
+    if((ptr1=strchr(db->idxbuf,SEP))==NULL){
+        err_dump("_db_readidx: missing first separator");
+    }
+    *ptr1++=0; /* replace SEP with null */
+    if((ptr2=strchr(ptr1,SEP))==NULL){
+        err_dump("_db_readidx: missing second separator");
+    }
+    *ptr2++=0; /* replace SEP with null */
+    if(strchr(ptr2,SEP)!=NULL){
+        err_dump("_db_readidx: too many separators");
+    }
+    /**
+     * Get the starting offset and length of the data record.
+     * 保存数据记录的偏移量以及长度
+     */
+    if((db->datoff=atol(ptr1))<0){
+        err_dump("_db_readidx: starting offset < 0");
+    }
+    if((db->datlen=atol(ptr2))<=0||db->datlen>DATLEN_MAX){
+        err_dump("_db_readidx: invalid length");
+    }
+    // 返回下一条索引记录偏移量
+    return(db->ptrval); /* return offset of next key in chain */
 }
