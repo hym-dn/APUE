@@ -505,7 +505,7 @@ static char *_db_readdat(DB *db){
         err_dump("_db_readdat: missing newline");
     }
     // 替换换行符
-    db->datbuf[db->datlen-1]=0; /* replace newline with null */_db_writeptr
+    db->datbuf[db->datlen-1]=0; /* replace newline with null */
     // 返回数据记录指针
     return(db->datbuf);
 }
@@ -651,5 +651,89 @@ static void _db_writedat(DB *db,const char *data,off_t offset,int whence){
         if(un_lock(db->datfd,0,SEEK_SET,0)<0){
             err_dump("_db_writedat: unlock error");
         }
+    }
+}
+
+/**
+ * Write an index record. _db_writedat is called before
+ * this function to set datoff and datlen fields in the
+ * DB structure, which we need to write the index record.
+ * 写索引记录到索引文件中
+ */
+static void _db_writeidx(DB *db,const char *key,off_t offset,
+    int whence,off_t ptrval){
+    struct iovec iov[2];
+    char assiiptrlen[PTR_SZ+IDXLEN_SZ+1];
+    int len;
+    char *fmt;
+    // 设置当前记录中下一个链表指针
+    if((db->ptrval=ptrval)<0||ptrval>PTR_MAX){ // 非法
+        err_quit("_db_writeidx: invalid ptr: %d",ptrval);
+    }
+    // 形成数据索引字符串
+    if(sizeof(off_t)==sizeof(long long)){
+        fmt="%s%c%lld%c%d\n";
+    }else{
+        fmt="%s%c%ld%c%d\n";
+    }
+    sprintf(db->idxbuf,fmt,key,SEP,db->datoff,SEP,db->datlen);
+    if((len==strlen(db->idxbuf))<IDXLEN_MIN||len>IDXLEN_MAX){ // 数据索引字符串非法
+        err_dump("_db_writeidx: invalid length");
+    }
+    sprintf(assiiptrlen,"%*ld%*d",PTR_SZ,ptrval,IDXLEN_SZ,len);
+    /**
+     * If we're appending, we have to lock before doing the lseek
+     * and write to make the two an atomic operation. If we're overwriting
+     * an existing record, we don't have to lock.
+     * 追加上锁
+     */
+    if(whence==SEEK_END){ /* we're appending */
+        if(writew_lock(db->idxfd,((db->nhash+1)*PTR_SZ)+1,SEEK_SET,0)<0){
+            err_dump("_db_writeidx: writew_lock error");
+        }
+    }
+    /**
+     * Position the index file and record the offset.
+     * 索引文件定位
+     */
+    if((db->idxoff=lseek(db->idxfd,offset,whence))==-1){
+        err_dump("_db_writeidx: lseek error");
+    }
+    // 向索引文件中写
+    iov[0].iov_base=assiiptrlen;
+    iov[0].iov_len=PTR_SZ+IDXLEN_SZ;
+    iov[1].iov_base=db->idxbuf;
+    iov[1].iov_len=len;
+    if(writev(db->idxlen,&iov[0],2)!=PTR_SZ+IDXLEN_SZ+len){
+        err_dump("_db_writeidx: wirtev error of index record");
+    }
+    // 追加解锁
+    if(whence==SEEK_END){
+        if(un_lock(db->idxfd,((db->nhash+1)*PTR_SZ)+1,SEEK_SET,0)<0){
+            err_dump("_db_writeidx: un_lock error");
+        }
+    }
+}
+
+/**
+ * Write a chain ptr field somewhere in the index file:
+ * the free list,the hash table, or in an index record.
+ * 将一个链表指针写到索引文件中
+ */
+static void _db_writeptr(DB *db,off_t offset,off_t ptrval){
+    char asciiptr[PTR_SZ+1];
+    // 指针非法
+    if(ptrval<0||ptrval>PTR_MAX){
+        err_quit("_db_writeptr: invalid ptr: %d",ptrval);
+    }
+    // 转为ASCII码
+    sprintf(asciiptr,"%*ld",PTR_SZ,ptrval);
+    // 定位
+    if(lseek(db->idxfd,offset,SEEK_SET)==-1){
+        err_dump("_db_writeptr: lseek error to ptr field");
+    }
+    // 写文件
+    if(write(db->idxfd,asciiptr,PTR_SZ)!=PTR_SZ){
+        err_dump("_db_writeptr: write error of ptr field");
     }
 }
