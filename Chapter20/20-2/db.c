@@ -91,7 +91,7 @@ DBHANDLE db_open(const char *pathname,int oflag,...){
     int len,mode;
     size_t i;
     char asciiptr[PTR_SZ+1];
-    char hash[(NHASH_DEF+1)*PTR_SZ+2]; /* +2 for newline and null */
+    char hash[(NHASH_DEF+1)*PTR_SZ+2]; /* +2_db_writeptr for newline and null */
     struct stat statbuff;
     /**
      * Allocate a DB structure,and the buffers it needs.
@@ -484,4 +484,172 @@ static off_t _db_readidx(DB *db,off_t offset){
     }
     // 返回下一条索引记录偏移量
     return(db->ptrval); /* return offset of next key in chain */
+}
+
+/**
+ * Read the current data record into the data buffer.
+ * Return a pointer to the null-terminated data buffer.
+ * 读取数据文件中的数据
+ */
+static char *_db_readdat(DB *db){
+    // 定位数据_db_writeptr
+    if(lseek(db->datfd,db->datoff,SEEK_SET)==-1){
+        err_dump("_db_readdat: lseek error");
+    }
+    // 读取数据
+    if(read(db->datfd,db->datbuf,db->datlen)!=db->datlen){
+        err_dump("_db_readdat: read error");
+    }
+    // 检验合法性
+    if(db->datbuf[db->datlen-1]!=NEWLINE){ /* sanity check */
+        err_dump("_db_readdat: missing newline");
+    }
+    // 替换换行符
+    db->datbuf[db->datlen-1]=0; /* replace newline with null */_db_writeptr
+    // 返回数据记录指针
+    return(db->datbuf);
+}
+
+/**
+ * Delete the specified record.
+ * 删除指定的记录
+ */
+int db_delete(DBHANDLE h,const char *key){
+    // 声明当前操作所需变量
+    DB *db=h;
+    int rc=0; /* assume record will be found */
+    // 查找指定主键的记录
+    if(_db_find_and_lock(db,key,1)==0){ // 查找成功
+        // 删除
+        _db_dodelete(db);
+        // 删除计数
+        db->cnt_delok++;
+    }else{ // 查找失败
+        rc=-1; /* not found */
+        // 删除失败计数
+        db->cnt_delerr++; 
+    }
+    // 解锁
+    if(un_lock(db->idxfd,db->chainoff,SEEK_SET,1)<0){
+        err_dump("db_delete: un_lock error");
+    }
+    // 返回
+    return(rc);
+}
+
+/**
+ * Delete the current record specified by the DB structure.
+ * This function is called by db_delete and db_store,after
+ * the record has been located by _db_find_and_lock.
+ * 从数据中删除当前记录
+ */
+static void _db_dodelete(DB *db){
+    int i;
+    char *ptr;
+    off_t freeptr,saveptr;
+    /**
+     * Set data buffer and key to all blanks.
+     * DB结构中的数据缓冲区用SPACE字符清空
+     */
+    for(ptr=db->datbuf,i=0;i<db->datlen-1;i++){
+        *ptr++=SPACE;
+    }
+    *ptr=0; /*null terminate for _db_writedat */
+    // DB结构中的索引缓冲区用SPACE字符清空
+    ptr=db->idxbuf;
+    while(*ptr){
+        *ptr++=SPACE;
+    }
+    /**
+     * We have to lock the free list.
+     * 对空闲链表加锁
+     */
+    if(writew_lock(db->idxfd,FREE_OFF,SEEK_SET,1)<0){
+        err_dump("_db_dodelete: wrietw_lock error");
+    }
+    /**
+     * Write the data record with all blanks.
+     * 擦除数据文件
+     */
+    _db_writedat(db,db->datbuf,db->datoff,SEEK_SET);
+    /**
+     * Read the free list pointer. Its value becomes the 
+     * chain ptr field of the deleted index record. This
+     * means the deleted record becomes the head of the 
+     * free list.
+     */
+    // 读取空闲链表
+    freeptr=_db_readptr(db,FREE_OFF);
+    /**
+     * Save the contents of index record chain ptr,
+     * before it's rewritten by _db_writeidx.
+     */
+    // 存储当前记录的一下条链表指针内容
+    saveptr=db->ptrval;
+    /**
+     * Rewrite the index record. This also rewrites the length
+     * of the index record,the data offset, and the data length,
+     * none of which has changed, but that's OK.
+     * 重写索引文件中当前记录
+     */
+    _db_writeidx(db,db->idxbuf,db->idxoff,SEEK_SET,freeptr);
+    /**
+     * Write the new free list pointer
+     * 写一个新的空闲链表
+     */
+    _db_writeptr(db,FREE_OFF,db->idxoff);
+    /**
+     * Rewrite the chain ptr that pointed to this record being
+     * deleted. Recall that _db_find_and_lock sets db->ptroff 
+     * to point to this chain ptr. We set this chain ptr to the 
+     * contents of the deleted record's chain ptr, saveptr.
+     * 重写被删除的链表
+     */
+    _db_writeptr(db,db->ptroff,saveptr);
+    // 解锁
+    if(un_lock(db->idxbuf,FREE_OFF,SEEK_SET,1)<0){
+        err_dump("_db_dodelete: unlock error");
+    }
+}
+
+/**
+ * Write a data record. Called by _db_dodelete (to write
+ * the record with blanks ) and db_store.
+ * 写指定的数据到数据文件中
+ */
+static void _db_writedat(DB *db,const char *data,off_t offset,int whence){
+    struct iovec iov[2];
+    static char newline=NEWLINE;
+    /**
+     * If we're appending, we have to lock before doing the lseek
+     * and write to make the two an atomic operation. If we're overwriting
+     * an existing record, we don't have to lock.
+     */
+    // 如果当前是追加写
+    if(whence==SEEK_END){
+        // 上锁
+        if(writew_lock(db->datfd,0,SEEK_SET,0)<0){ /* we're appending,lock entire file */
+            err_dump("_db_writedat: writew_lock error");
+        }
+    }
+    // 定位数据
+    if((db->datoff=lseek(db->datfd,offset,whence))==-1){
+        err_dump("_db_writedat: lseek error");
+    }
+    db->datlen=strlen(data)+1; /* datlen includes newline */
+    // 写文件
+    iov[0].iov_base=(char*)data;
+    iov[0].iov_len=db->datlen-1;
+    iov[1].iov_base=&newline;
+    iov[1].iov_len=1;
+    if(writev(db->datfd,&iov[0],2)!=db->datlen){
+        err_dump("_db_writedat: writev error of data record");
+    }
+    // 如果当前是追加
+    if(whence==SEEK_END){
+        // 解锁
+        if(un_lock(db->datfd,0,SEEK_SET,0)<0){
+            err_dump("_db_writedat: unlock error");
+        }
+    }
 }
