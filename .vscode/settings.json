@@ -7,6 +7,8 @@
         "lock_reg.h": "c",
         "apue.h": "c",
         "unistd.h": "c",
-        "stropts.h": "c"
+        "stropts.h": "c",
+        "ctype.h": "c",
+        "print.h": "c"
     }
 }

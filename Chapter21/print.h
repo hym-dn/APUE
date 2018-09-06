@@ -1,8 +1,11 @@
 #ifndef _PRINT_H
 #define _PRINT_H
+
 /*
  * Print server header file.
+ * 包含常用的常数、数据结构定义以及工具例程声明的头文件
  */
+
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #if defined(BSD) || defined(MACOS)

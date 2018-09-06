@@ -1,3 +1,5 @@
+// 用于两个程序的工具例程
+
 #include "apue.h"
 #include "print.h"
 #include <ctype.h>

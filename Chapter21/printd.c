@@ -1,6 +1,8 @@
 /*
  * Print server daemon.
+ * 打印假脱机守护进程的C源文件
  */
+
 #include "apue.h"
 #include "print.h"
 #include "ipp.h"

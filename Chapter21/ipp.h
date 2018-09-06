@@ -4,10 +4,12 @@
 /*
  * Defines parts of the IPP protocol between the scheduler
  * and the printer.  Based on RFC2911 and RFC2910.
+ * 包含IPP定义的头文件
  */
 
 /*
  * Status code classes.
+ * 定义IPP协议的状态码
  */
 #define STATCLASS_OK(x)     ((x) >= 0x0000 && (x) <= 0x00ff)
 #define STATCLASS_INFO(x)   ((x) >= 0x0100 && (x) <= 0x01ff)
@@ -17,6 +19,7 @@
 
 /*
  * Status codes.
+ * 定义基于RFC 2911的状态码，但是本程序中并不使用，留给读者练习使用
  */
 #define STAT_OK           0x0000  /* success */
 #define STAT_OK_ATTRIGN   0x0001  /* OK; some attrs ignored */
@@ -42,6 +45,9 @@
 #define STAT_CLI_FMTERR   0x0411  /* document format error */
 #define STAT_CLI_ACCERR   0x0412  /* error accessing data */
 
+/**
+ * 0x500到0x5ff是服务器错误码
+ */
 #define STAT_SRV_INTERN   0x0500  /* unexpected internal error */
 #define STAT_SRV_NOTSUP   0x0501  /* operation not supported */
 #define STAT_SRV_UNAVAIL  0x0502  /* service unavailable */
@@ -55,6 +61,7 @@
 
 /*
  * Operation IDs
+ * 各种操作ID
  */
 #define OP_PRINT_JOB         0x02
 #define OP_PRINT_URI         0x03
@@ -75,6 +82,7 @@
 
 /*
  * Attribute Tags.
+ * 属性标志
  */
 #define TAG_OPERATION_ATTR   0x01	/* operation attributes tag */
 #define TAG_JOB_ATTR         0x02	/* job attributes tag */
@@ -84,6 +92,7 @@
 
 /*
  * Value Tags.
+ * 值标志只是每个属性和参数的格式
  */
 #define TAG_UNSUPPORTED      0x10	/* unsupported value */
 #define TAG_UNKNOWN          0x12	/* unknown value */
@@ -106,14 +115,21 @@
 #define TAG_NATULANG         0x48	/* naturalLanguage */
 #define TAG_MIMETYPE         0x49	/* mimeMediaType */
 
+/**
+ * 定义IPP首部结构
+ */
 struct ipp_hdr {
+	// 版本号
 	int8_t  major_version;	/* always 1 */
 	int8_t  minor_version;	/* always 1 */
+	// 操作ID/状态码
 	union {
 		int16_t op;	/* operation ID */
 		int16_t st;	/* status */
 	} u;
+	// 请求ID
 	int32_t request_id;		/* request ID */
+	// 属性、属性结束标志、数据.....
 	char    attr_group[1];	/* start of optional attributes group */
 	/* optional data follows */
 };

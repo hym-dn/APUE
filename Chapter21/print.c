@@ -2,7 +2,9 @@
  * The client command for printing documents.  Opens the file
  * and sends it to the printer spooling daemon.  Usage:
  * 	print [-t] filename
+ * 用于打印文件的命令行程序C源文件
  */
+
 #include "apue.h"
 #include "print.h"
 #include <fcntl.h>
