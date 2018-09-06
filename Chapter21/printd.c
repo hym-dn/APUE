@@ -171,7 +171,6 @@ main(int argc, char *argv[])
 			log_sys("select failed");
 		for (i = 0; i <= maxfd; i++) {
 			if (FD_ISSET(i, &rset)) {
-
 				/*
 				 * Accept the connection and handle
 				 * the request.
