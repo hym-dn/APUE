@@ -197,7 +197,7 @@ init_request(void)
 {
 	int		n;
 	char	name[FILENMSZ];
-
+	
 	sprintf(name, "%s/%s", SPOOLDIR, JOBFILE);
 	jobfd = open(name, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
 	if (write_lock(jobfd, 0, SEEK_SET, 0) < 0)
