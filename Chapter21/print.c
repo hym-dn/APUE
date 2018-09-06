@@ -20,7 +20,6 @@ int log_to_stderr = 1;
 
 void submit_file(int, int, const char *, size_t, int);
 
-
 int
 main(int argc, char *argv[])
 {
