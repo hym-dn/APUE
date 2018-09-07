@@ -17,12 +17,14 @@
 
 /*
  * These are for the HTTP response from the printer.
+ * HTTP请求的状态
  */
 #define HTTP_INFO(x)	((x) >= 100 && (x) <= 199)
 #define HTTP_SUCCESS(x) ((x) >= 200 && (x) <= 299)
 
 /*
  * Describes a print job.
+ * 打印作业
  */
 struct job {
 	struct job      *next;		/* next in list */
@@ -33,6 +35,7 @@ struct job {
 
 /*
  * Describes a thread processing a client request.
+ * 接受打印请求的线程
  */
 struct worker_thread {
 	struct worker_thread  *next;	/* next in list */
