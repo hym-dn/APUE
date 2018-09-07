@@ -46,14 +46,16 @@ struct worker_thread {
 
 /*
  * Needed for logging.
+ * 定义日志输出位置
  */
 int					log_to_stderr = 0;
 
 /*
  * Printer-related stuff.
+ * 打印机相关信息
  */
 struct addrinfo		*printer;
-char					*printer_name;
+char				*printer_name;
 pthread_mutex_t		configlock = PTHREAD_MUTEX_INITIALIZER;
 int					reread;
 
