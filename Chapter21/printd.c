@@ -61,6 +61,7 @@ int					reread;
 
 /*
  * Thread-related stuff.
+ * 线程相关信息
  */
 struct worker_thread	*workers;
 pthread_mutex_t		workerlock = PTHREAD_MUTEX_INITIALIZER;
@@ -68,6 +69,7 @@ sigset_t				mask;
 
 /*
  * Job-related stuff.
+ * 作业相关信息
  */
 struct job				*jobhead, *jobtail;
 int					jobfd;
